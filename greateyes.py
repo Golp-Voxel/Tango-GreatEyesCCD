@@ -148,11 +148,28 @@ def WaitWhileCameraBusy(cameraAddr):
 
 def WriteToFile(inBuf, width, height, bytesPerPixel, filename):
     writetofile = False
-    image_array = np.array(inBuf, dtype = np.uint8)
+    """
+         TO ADD to the other version
+    """
+    s = ""
+    numb = 1
+    newBuf = []
+    for i in inBuf:
+        s += str(bin(i)[2:].zfill(8))
+        numb+=1
+        if numb == bytesPerPixel:
+            numb = 1
+            newBuf.append(int(s,2))
+
+    image_array = np.array(newBuf)
     
-    dim = (width, height)
+    """
+    _______________________________________________________
+    """
+
+    # dim = (width, height)
     print(max(image_array))
-    resized = cv2.resize(image_array, dim)
+    # resized = cv2.resize(image_array, dim)
 
     try:
         if writetofile:

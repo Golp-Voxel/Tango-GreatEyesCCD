@@ -8,6 +8,7 @@ import json
 import time
 from threading import Thread
 import cv2
+import threading
 from greateyes import *
 
 
@@ -452,6 +453,7 @@ class GreatEyes_Tango(Device):
     _available_cameras = ""
     CAMARA = None
     my_camera_ready = False
+    save_image = []
 
     host = device_property(dtype=str, default_value="localhost")
     port = class_property(dtype=int, default_value=10000)
@@ -506,6 +508,17 @@ class GreatEyes_Tango(Device):
         fget="get_image",
     )
 
+    TakeImage = attribute(
+        label="Take a Image",
+        dtype=((int,),),
+        access=AttrWriteType.READ_WRITE,
+        max_warning=8.0,
+        fget="get_image",
+        fset="take_image",
+        doc="the power supply current",
+    )
+
+    
     @attribute
     def voltage(self):
         return 10.0
@@ -522,9 +535,18 @@ class GreatEyes_Tango(Device):
         print(type(a))
         return a
     
+    def thread_function(self):
+        self.save_image = GreatEyes.AcquisitionFullFrame()
+        
+    
+    def take_image(self):
+        x = threading.Thread(target=self.thread_function, args=())
+        x.start()
+        print("Wait before read the image")
+    
     def get_image(self):
-        image_buffer_copy = GreatEyes.AcquisitionFullFrame()
-        return image_buffer_copy
+        return self.save_image
+    
     
     # @command(dtype_in=int, dtype_out=str)
     # def set_expousure_time_us(self,parameter):

@@ -3,6 +3,14 @@ import sys
 import numpy as np
 from ctypes import *
 import cv2
+from PIL import Image
+import time
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+from time import process_time 
+np.set_printoptions(threshold=sys.maxsize)
 
 GreatEyesLib = None
 
@@ -146,44 +154,15 @@ def WaitWhileCameraBusy(cameraAddr):
     return True;
 
 
-def WriteToFile(inBuf, width, height, bytesPerPixel, filename):
+def DisplayImage(inBuf, width, height, bytesPerPixel, filename):
     writetofile = False
-    """
-         TO ADD to the other version
-    """
-    s = ""
-    numb = 1
-    newBuf = []
-    for i in inBuf:
-        s += str(bin(i)[2:].zfill(8))
-        numb+=1
-        if numb == bytesPerPixel:
-            numb = 1
-            newBuf.append(int(s,2))
-
-    image_array = np.array(newBuf)
-    
-    """
-    _______________________________________________________
-    """
-
-    # dim = (width, height)
-    print(max(image_array))
-    # resized = cv2.resize(image_array, dim)
-
-    try:
-        if writetofile:
-            print(f"Write file {image_filename}   {os.path.join(os.getcwd(), filename)}")
-            status = cv2.imwrite(os.path.join(os.getcwd(), filename), resized)
-            print(f"status {status}")
-        else:
-            print("Displaying image")
-            cv2.namedWindow("Image From GreatEyes Cam", cv2.WINDOW_NORMAL)
-            cv2.imshow("Image From GreatEyes Cam", image_array)            
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-    except Exception as e:
-        print(f"Error {e}")               
+    image_array = np.reshape(inBuf,(height,width))
+    # f = open("imagebuf_afte_WriteToFile_06_05_1.txt", "w")
+    # f.write(str(image_array))
+    # f.close()
+    plt.imshow(image_array[12+10:][8+10:],cmap="gray")
+    plt.colorbar()
+    plt.show()           
 
 
 # 2. Exported DLL Functions

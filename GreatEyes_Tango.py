@@ -444,7 +444,7 @@ def TestCTypesBitfield() -> None:
 
 
 
-class GreatEyes_T(Device):
+class GreatEyes_Tango(Device):
     _my_current = 2.3456
     _my_range = 0.0
     _my_compliance = 0.0
@@ -555,4 +555,4 @@ class GreatEyes_T(Device):
         return self._output_on
         
 if __name__ == "__main__":
-    GreatEyes_T.run_server()
+    GreatEyes_Tango.run_server()

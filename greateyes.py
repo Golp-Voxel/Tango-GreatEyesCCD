@@ -436,9 +436,9 @@ def SetBitDepth(bytesPerPixel, statusMSG, addr):
     
     arg_statusMSG = c_int(statusMSG[0])
     
-    print(f"Last status {arg_statusMSG.value}")
+    # print(f"Last status {arg_statusMSG.value}")
     status = _SetBitDepth(bytesPerPixel, byref(arg_statusMSG), addr)
-    print(f"Last status {arg_statusMSG.value}")
+    # print(f"Last status {arg_statusMSG.value}")
     statusMSG[0] = arg_statusMSG.value
     
     # print (f"Status {status}")
@@ -658,9 +658,9 @@ def TemperatureControl_Init(coolingHardware, minTemperature, maxTemperature, sta
     arg_maxTemperature = c_int(maxTemperature[0])
     arg_statusMSG = c_int(statusMSG[0])
     
-    print(f"Last status {arg_statusMSG.value}")
+    # print(f"Last status {arg_statusMSG.value}")
     status = _TemperatureControl_Init(coolingHardware, byref(arg_minTemperature), byref(arg_maxTemperature), byref(arg_statusMSG), addr)
-    print(f"Last status {arg_statusMSG.value}")
+    # print(f"Last status {arg_statusMSG.value}")
     minTemperature[0] = arg_minTemperature.value
     maxTemperature[0] = arg_maxTemperature.value
     statusMSG[0] = arg_statusMSG.value
@@ -774,10 +774,10 @@ def GetMeasurementData_DynBitDepth(pInDataStart, statusMSG, addr):
     _GetMeasurementData_DynBitDepth.restype = c_bool
     
     arg_statusMSG = c_int(statusMSG[0])
-    print(sys.getsizeof(pInDataStart))
-    print(f"Last status {arg_statusMSG.value}")
+    # print(sys.getsizeof(pInDataStart))
+    # print(f"Last status {arg_statusMSG.value}")
     status = _GetMeasurementData_DynBitDepth(pInDataStart, byref(arg_statusMSG), addr)
-    print(f"Last status {arg_statusMSG.value}")
+    # print(f"Last status {arg_statusMSG.value}")
     statusMSG[0] = arg_statusMSG.value
     
     # print (f"Status {status}")
@@ -809,9 +809,9 @@ def StartMeasurement(correctBias, showSync, showShutter, triggerMode, triggerTim
     
     arg_statusMSG = c_int(statusMSG[0])
     
-    print(f"Last status {arg_statusMSG.value}")
+    # print(f"Last status {arg_statusMSG.value}")
     status = _StartMeasurement(correctBias, showSync, showShutter, triggerMode, triggerTimeOut, byref(arg_statusMSG), addr)
-    print(f"Last status {arg_statusMSG.value}")
+    # print(f"Last status {arg_statusMSG.value}")
     statusMSG[0] = arg_statusMSG.value
     
     # print (f"Status {status}")

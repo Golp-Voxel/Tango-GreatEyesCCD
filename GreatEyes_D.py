@@ -10,6 +10,22 @@ from threading import Thread
 import cv2
 from greateyes import *
 
+
+import tango
+from tango import AttrQuality, AttrWriteType, DevState, DispLevel, AttReqType, Database
+from tango.server import Device, attribute, command
+from tango.server import class_property, device_property
+
+DLL_Location ="C:\\Users\\User\\Desktop\\Tango_Device_Test\\Tango_GreatEyesCCD\\greateyes.dll" 
+
+db = Database()
+try:
+   prop = db.get_property('ORBendPoint', 'Pool/' + instance_name)
+   orb_end_point = prop['Pool/' + instance_name][0]
+   os.environ["ORBendPoint"] = orb_end_point
+except:
+   pass
+
 np.set_printoptions(threshold=sys.maxsize)
 
 # ----------------------------------------------------------------------------------------------------
@@ -275,36 +291,36 @@ class GreatEyes():
         # * **************************************/
 
         # sensor parameters
-        width = [0];
-        height = [0];		
+        width = [2048];
+        height = [2052];		
         # print(f"bytesPerPixel {bytesPerPixel[0]}  - c_uint8 {c_uint8} ")
         # print(f"bytesPerPixel {bytesPerPixel[0]}  - c_uint16 {c_uint16} ")
         # print(f"bytesPerPixel {bytesPerPixel[0]}  - c_uint32 {c_uint32} ")
         
         # set exposure time
-        status = SetExposure(exposureTimeMilliseconds, lastStatus, cameraAddr)
-        ExitOnError(status, "SetExposure()", lastStatus[0]);	
-        print(f"exposure time set: {exposureTimeMilliseconds} ms")
+        # status = SetExposure(exposureTimeMilliseconds, lastStatus, cameraAddr)
+        # ExitOnError(status, "SetExposure()", lastStatus[0]);	
+        # print(f"exposure time set: {exposureTimeMilliseconds} ms")
 
-        # set readout speed
-        status = SetReadOutSpeed(readoutSpeed, lastStatus, cameraAddr)
-        ExitOnError(status, "SetReadOutSpeed()", lastStatus[0]);
-        print(f"readout speed set")
+        # # set readout speed
+        # status = SetReadOutSpeed(readoutSpeed, lastStatus, cameraAddr)
+        # ExitOnError(status, "SetReadOutSpeed()", lastStatus[0]);
+        # print(f"readout speed set")
 
         # set bitDepth of incomming data array
         status = SetBitDepth(setBytesPerPixel, lastStatus, cameraAddr)
         ExitOnError(status, "SetBitDepth()", lastStatus[0]);
-        print(f"bit depth set to: \({setBytesPerPixel} * 8\) bit")
+        # print(f"bit depth set to: \({setBytesPerPixel} * 8\) bit")
 
-        # get size of image
-        status = GetImageSize(width, height, bytesPerPixel, cameraAddr)
-        ExitOnError(status, "GetImageSize()", lastStatus[0]);		
-        print(f"camera is prepared to acquire a full frame: {width[0]} x {height[0]} ")		
+        # # get size of image
+        # status = GetImageSize(width, height, bytesPerPixel, cameraAddr)
+        # ExitOnError(status, "GetImageSize()", lastStatus[0]);		
+        # print(f"camera is prepared to acquire a full frame: {width[0]} x {height[0]} ")		
 
         #pixel number
         array_size = width[0] * height[0]#* bytesPerPixel[0]
-        print(f"bytesPerPixel {bytesPerPixel[0]}")
-        print("Array size: "+str(array_size))
+        # print(f"bytesPerPixel {bytesPerPixel[0]}")
+        # print("Array size: "+str(array_size))
         # make the 8bit unsigned integer array type
         
         if bytesPerPixel[0] == 2:
@@ -323,7 +339,7 @@ class GreatEyes():
         # start acquisition
         status = StartMeasurement(enableBiasCorrection, enableSyncOutput, enableShutterOutput, useExternalTrigger, triggerTimeoutMilliseconds, lastStatus, cameraAddr)
         ExitOnError(status, "StartMeasurement()", lastStatus[0]);
-        print(f"image acquisition started")
+        # print(f"image acquisition started")
 
         # wait until image acquisition is complete 
         # check DllIsBusy() function
@@ -332,9 +348,9 @@ class GreatEyes():
         print(imageBuf)
         status = GetMeasurementData_DynBitDepth(imageBuf, lastStatus, cameraAddr)
         ExitOnError(status, "GetMeasurementData_DynBitDepth()", lastStatus[0])
-        print("ROSSA")
+        # print("ROSSA")
         timeElapsed = GetLastMeasTimeNeeded(cameraAddr)
-        print(f"image acquisition complete. time elapsed:  {timeElapsed} ms")
+        # print(f"image acquisition complete. time elapsed:  {timeElapsed} ms")
 
         
         image_array = np.reshape(imageBuf,(height[0],width[0]))
@@ -422,22 +438,119 @@ def TestCTypesBitfield() -> None:
     print(bf.x, ", ", bf.y, ", ", bf.z)
 
 
-if __name__ == "__main__":
-    setGreatEyesDLL("C:\\Users\\User\\Desktop\\Tango_Device_Test\\Tango_GreatEyesCCD\\greateyes.dll")
-    GreatEyes.ConnectCamera()
-    # GreatEyes.CoolingSystem()
-    # GreatEyes.AutoShutter()
-    # try:
-    GreatEyes.AcquisitionFullFrame()
-# except:
-    # print("ERROR AcquisitionFullFrame")
-        # pass
-    GreatEyes.DisconnectCamara()
-    #TestCTypesBitfield()
-    # print(f" ConnectToSingleCameraServer : {ConnectToSingleCameraServer(0)}")
-    
-    
-'''
-https:#www.youtube.com/watch?v=r_MbozD32eo
 
-''' 
+
+
+class GreatEyes_D(Device):
+    _my_current = 2.3456
+    _my_range = 0.0
+    _my_compliance = 0.0
+    _output_on = False
+    _available_cameras = ""
+    CAMARA = None
+    my_camera_ready = False
+
+    host = device_property(dtype=str, default_value="localhost")
+    port = class_property(dtype=int, default_value=10000)
+
+    def init_device(self):
+        super().init_device()
+        self.info_stream(f"Connection details: {self.host}:{self.port}")
+        self.set_state(DevState.ON)
+        self.info_stream("\r Try to start the GreatEyes Driver \r")
+        setGreatEyesDLL(DLL_Location)
+        GreatEyes.ConnectCamera()
+        
+        
+        self.set_status("Thorlabs Camara Driver is ON")
+
+    def __del__(self):
+        GreatEyes.DisconnectCamara()
+        return 
+
+    current = attribute(
+        label="Current",
+        dtype=float,
+        display_level=DispLevel.EXPERT,
+        access=AttrWriteType.READ_WRITE,
+        unit="A",
+        format="8.4f",
+        min_value=0.0,
+        max_value=8.5,
+        min_alarm=0.1,
+        max_alarm=8.4,
+        min_warning=0.5,
+        max_warning=8.0,
+        fget="get_current",
+        fset="set_current",
+        doc="the power supply current",
+    )
+
+    noise = attribute(
+        label="Noise",
+        dtype=((float,),),
+        max_dim_x=1450,
+        max_dim_y=1450,
+        fget="get_noise",
+    )
+
+    Image_foto = attribute(
+        label="Image Greateyes",
+        dtype=((int,),),
+        #data_format = tango.AttrDataFormat.IMAGE,
+        max_dim_x=2100,
+        max_dim_y=2100,
+        fget="get_image",
+    )
+
+    @attribute
+    def voltage(self):
+        return 10.0
+
+    def get_current(self):
+        return self._my_current
+
+    def set_current(self, current):
+        print("Current set to %f" % current)
+        self._my_current = current
+
+    def get_noise(self):
+        a = np.random.random_sample((500, 500))
+        print(type(a))
+        return a
+    
+    def get_image(self):
+        image_buffer_copy = GreatEyes.AcquisitionFullFrame()
+        # image_buffer_copy = np.random.random_sample((2052, 2048))
+        return image_buffer_copy
+    
+    # @command(dtype_in=int, dtype_out=str)
+    # def set_expousure_time_us(self,parameter):
+    #     self.CAMARA.exposure_time_us = parameter  # set exposure to 1.1 ms
+    #     return "CAMARA "+ " was set exposure time "+ str(parameter) +" us\n"
+            
+    # @command(dtype_in=int, dtype_out=str)      
+    # def set_frames_per_trigger_zero_for_unlimited(self,parameter):
+    #     self.CAMARA.frames_per_trigger_zero_for_unlimited = parameter  # start camera in continuous mode
+    #     return "CAMARA "+ " was set frames per trigger zero or unlimited "+ str(parameter) +"\n"
+        
+    # @command(dtype_in=int, dtype_out=str)       
+    # def set_image_poll_timeout_ms(self,parameter):
+    #     self.CAMARA.image_poll_timeout_ms = parameter  # 1 second polling timeout
+    #     return "CAMARA "+ " was set image poll timeout "+ str(parameter) +" ms\n"
+
+
+    @command(dtype_out=str)    
+    def get_foto_JSON(self):
+
+        send_JSON = {"Image":self.get_noise().tolist()}
+            
+        return json.dumps(send_JSON)
+   
+    @command(dtype_in=bool, dtype_out=bool)
+    def output_on_off(self, on_off):
+        self._output_on = on_off
+        return self._output_on
+        
+if __name__ == "__main__":
+    GreatEyes_D.run_server()

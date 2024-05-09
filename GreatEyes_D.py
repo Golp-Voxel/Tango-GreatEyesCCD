@@ -8,6 +8,7 @@ import json
 import time
 from threading import Thread
 import cv2
+import threading
 from greateyes import *
 
 
@@ -449,6 +450,7 @@ class GreatEyes_D(Device):
     _available_cameras = ""
     CAMARA = None
     my_camera_ready = False
+    save_image = []
 
     host = device_property(dtype=str, default_value="localhost")
     port = class_property(dtype=int, default_value=10000)
@@ -500,8 +502,17 @@ class GreatEyes_D(Device):
         #data_format = tango.AttrDataFormat.IMAGE,
         max_dim_x=2100,
         max_dim_y=2100,
+        # fget="get_image_old",
         fget="get_image",
     )
+
+    TakeImage = attribute(
+        label="Take a Image",
+        dtype=str,
+        fget="take_image",
+        doc="Test to take image",
+    )
+
 
     @attribute
     def voltage(self):
@@ -519,11 +530,24 @@ class GreatEyes_D(Device):
         print(type(a))
         return a
     
-    def get_image(self):
+    def get_image_old(self):
         image_buffer_copy = GreatEyes.AcquisitionFullFrame()
         # image_buffer_copy = np.random.random_sample((2052, 2048))
         return image_buffer_copy
     
+    def thread_function(self):
+        self.save_image = GreatEyes.AcquisitionFullFrame()
+        
+    
+    def take_image(self):
+        x = threading.Thread(target=self.thread_function, args=())
+        x.start()
+        print("Wait before read the image")
+        return "Wait"
+    
+    def get_image(self):
+        return self.save_image
+
     # @command(dtype_in=int, dtype_out=str)
     # def set_expousure_time_us(self,parameter):
     #     self.CAMARA.exposure_time_us = parameter  # set exposure to 1.1 ms

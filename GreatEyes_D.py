@@ -162,7 +162,7 @@ class GreatEyes():
             print(f"connected to camera {modelStr}\n")				
         else:
             print(f"no device found")
-            waitForReturn();
+            #waitForReturn();
             return -1;
 
         # initialize camera
@@ -403,7 +403,7 @@ class GreatEyes():
             status = DisconnectCameraServer(cameraAddr)
             ExitOnError(status, "DisconnectCameraServer()", lastStatus[0])
 
-        waitForReturn();
+        #waitForReturn();
         return 0
         
 
@@ -455,6 +455,7 @@ class GreatEyes_D(Device):
     host = device_property(dtype=str, default_value="localhost")
     port = class_property(dtype=int, default_value=10000)
 
+    # Tango Device Init function 
     def init_device(self):
         super().init_device()
         self.info_stream(f"Connection details: {self.host}:{self.port}")
@@ -465,10 +466,12 @@ class GreatEyes_D(Device):
         
         
         self.set_status("Thorlabs Camara Driver is ON")
-
-    def __del__(self):
+        
+    
+    # Tango Device Delete function     
+    def delete_device(self):
         GreatEyes.DisconnectCamara()
-        return 
+
 
     current = attribute(
         label="Current",

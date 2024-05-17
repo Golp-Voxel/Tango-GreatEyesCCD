@@ -2,4 +2,4 @@
 call "C:\Users\Pedro\Desktop\Tango_GreatEyesCCD\tango-env\Scripts\activate"
 
 cd C:\Users\Pedro\Desktop\Tango_GreatEyesCCD REM  This can be the folder that you want to save the image
-python C:\Users\Pedro\Desktop\Tango_GreatEyesCCD\StandaM.py 1 2>&1
+python C:\Users\Pedro\Desktop\Tango_GreatEyesCCD\GreatEyes_D.py 1 2>&1

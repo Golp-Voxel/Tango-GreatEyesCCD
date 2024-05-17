@@ -9,7 +9,7 @@ import time
 from threading import Thread
 import cv2
 import threading
-from greateyes import *
+from Code.greateyes import *
 
 
 import tango
@@ -17,7 +17,7 @@ from tango import AttrQuality, AttrWriteType, DevState, DispLevel, AttReqType, D
 from tango.server import Device, attribute, command
 from tango.server import class_property, device_property
 
-DLL_Location ="C:\\Users\\User\\Desktop\\Tango_Device_Test\\Tango_GreatEyesCCD\\greateyes.dll" 
+DLL_Location ="C:\\Users\\Pedro\\Desktop\\Tango_GreatEyesCCD\\Code\\greateyes.dll" 
 
 db = Database()
 try:
@@ -502,16 +502,16 @@ class GreatEyes_D(Device):
         #data_format = tango.AttrDataFormat.IMAGE,
         max_dim_x=2100,
         max_dim_y=2100,
-        # fget="get_image_old",
-        fget="get_image",
+        fget="get_image_old",
+        #fget="get_image",
     )
 
-    TakeImage = attribute(
-        label="Take a Image",
-        dtype=str,
-        fget="take_image",
-        doc="Test to take image",
-    )
+    # TakeImage = attribute(
+    #     label="Take a Image",
+    #     dtype=str,
+    #     fget="take_image",
+    #     doc="Test to take image",
+    # )
 
 
     @attribute

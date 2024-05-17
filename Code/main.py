@@ -423,12 +423,12 @@ def TestCTypesBitfield() -> None:
 
 
 if __name__ == "__main__":
-    setGreatEyesDLL("C:\\Users\\User\\Desktop\\Tango_Device_Test\\Tango_GreatEyesCCD\\greateyes.dll")
+    setGreatEyesDLL("C:\\Users\\Pedro\\Desktop\\Tango_GreatEyesCCD\\Code\\greateyes.dll")
     GreatEyes.ConnectCamera()
     # GreatEyes.CoolingSystem()
     # GreatEyes.AutoShutter()
     # try:
-    GreatEyes.AcquisitionFullFrame()
+    # GreatEyes.AcquisitionFullFrame()
 # except:
     # print("ERROR AcquisitionFullFrame")
         # pass

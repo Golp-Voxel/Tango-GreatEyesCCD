@@ -1,1 +1,1 @@
-# Tango_GreatEyesCCD
+# GreatEyes CCD - Tango Device Server

@@ -1,0 +1,5 @@
+*.tif
+*.png
+/tango-env
+/tango_env
+*.bat

@@ -17,15 +17,15 @@ from tango import AttrQuality, AttrWriteType, DevState, DispLevel, AttReqType, D
 from tango.server import Device, attribute, command
 from tango.server import class_property, device_property
 
-DLL_Location ="C:\\Users\\Pedro\\Desktop\\Tango_GreatEyesCCD\\Code\\greateyes.dll" 
+import configparser
 
-db = Database()
-try:
-   prop = db.get_property('ORBendPoint', 'Pool/' + instance_name)
-   orb_end_point = prop['Pool/' + instance_name][0]
-   os.environ["ORBendPoint"] = orb_end_point
-except:
-   pass
+
+config_info = configparser.ConfigParser()
+config_info.read('setting.ini')
+
+
+DLL_Location = str(config_info['DEFAULT']['DLL'])+"\\greateyes.dll" 
+
 
 np.set_printoptions(threshold=sys.maxsize)
 

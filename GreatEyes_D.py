@@ -17,7 +17,7 @@ from tango import AttrQuality, AttrWriteType, DevState, DispLevel, AttReqType, D
 from tango.server import Device, attribute, command
 from tango.server import class_property, device_property
 
-DLL_Location ="C:\\Users\\Pedro\\Desktop\\Tango_GreatEyesCCD\\Code\\greateyes.dll" 
+DLL_Location ="C:\\Users\\Voxel\\Desktop\\Tango_Device\\Tango_GreatEyesCCD\\Code\\greateyes.dll" 
 
 db = Database()
 try:
@@ -42,7 +42,7 @@ connectionType = connectionType_USB;
 ip = "192.168.1.233";
 
 # exposure time in ms
-exposureTimeMilliseconds = 10;
+exposureTimeMilliseconds = 500;
 
 # pixel clock
 readoutSpeed = readoutSpeed_1_MHz;
@@ -54,7 +54,7 @@ setBytesPerPixel = 4;
 coolingHardwareOption = 42223;
 
 # set temperature for temperature control in degree Celsius
-switchOnTemperatureControl = False;
+switchOnTemperatureControl = True;
 setTemperature             = 15;
 
 # shutter timings in SHUTTER_AUTO mode
@@ -62,8 +62,8 @@ shutterOpenTimeMilliseconds  = 25;
 shutterCloseTimeMilliseconds = 25;
 
 # binning parameter
-binningX = 2;
-binningY = 2;
+binningX = 2;#2
+binningY = 2;#2
 
 # crop parameter
 cropY = 35;
@@ -195,7 +195,6 @@ class GreatEyes():
             supportCropXString = "supported";		
         print(f"sensor feature crop in x (columns): {supportCropXString}\n")
 
-
     def CoolingSystem():
         # /****************************************
         # * 2. setup cooling control
@@ -216,7 +215,7 @@ class GreatEyes():
         temperatureLevels = 0;
     
        
-        setTemperatureValid = False;
+        setTemperatureValid = True;
 
         minTemperature = [0];
         maxTemperature = [0];
@@ -299,8 +298,8 @@ class GreatEyes():
         # print(f"bytesPerPixel {bytesPerPixel[0]}  - c_uint32 {c_uint32} ")
         
         # set exposure time
-        # status = SetExposure(exposureTimeMilliseconds, lastStatus, cameraAddr)
-        # ExitOnError(status, "SetExposure()", lastStatus[0]);	
+        status = SetExposure(exposureTimeMilliseconds, lastStatus, cameraAddr)
+        ExitOnError(status, "SetExposure()", lastStatus[0]);	
         # print(f"exposure time set: {exposureTimeMilliseconds} ms")
 
         # # set readout speed
@@ -464,6 +463,9 @@ class GreatEyes_D(Device):
         setGreatEyesDLL(DLL_Location)
         GreatEyes.ConnectCamera()
         
+        # cool down to set temperature
+        GreatEyes.CoolingSystem()
+        #print(f"Temperature cooling turned on to: {setTemperature}\n")
         
         self.set_status("Thorlabs Camara Driver is ON")
         
@@ -570,7 +572,7 @@ class GreatEyes_D(Device):
     @command(dtype_out=str)    
     def get_foto_JSON(self):
 
-        send_JSON = {"Image":self.get_noise().tolist()}
+        send_JSON = {"Image":self.get_image_old().tolist()}
             
         return json.dumps(send_JSON)
    

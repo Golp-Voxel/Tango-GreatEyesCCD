@@ -427,6 +427,35 @@ class GreatEyes():
 
 
 
+    def readTemperature():
+        # global vars
+        global lastStatus
+        # print(f"Last Status : {lastStatus[0]}")
+        msg_to_send = {}
+        
+        # variables for temperature control
+        # temperature/cooling
+        numCoolingLevel = 0
+        thermistorSensorTemperature = 0
+        thermistorBacksideTemperature = 1
+
+        sensorTemperature = [0];
+        backsideTemperature = [0];
+        # readout temperature values again
+        status = TemperatureControl_GetTemperature(thermistorSensorTemperature, sensorTemperature, lastStatus, cameraAddr)
+        ExitOnError(status, "TemperatureControl_GetTemperature()", lastStatus[0])
+        print(f"sensor temperature: {sensorTemperature[0]} degree Celsius")
+        
+        msg_to_send["sensor"] = sensorTemperature[0]
+
+        status = TemperatureControl_GetTemperature(thermistorBacksideTemperature, backsideTemperature, lastStatus, cameraAddr)
+        ExitOnError(status, "TemperatureControl_GetTemperature()", lastStatus[0])
+        print(f"backside temperature: {backsideTemperature[0]} degree Celsius")
+
+        msg_to_send["backside"] = backsideTemperature[0]
+
+        return msg_to_send
+
 
 class TestBitfield(Structure):
     _fields_ = [("x", c_uint16, 9),
@@ -443,10 +472,6 @@ def TestCTypesBitfield() -> None:
 
 
 class GreatEyes_D(Device):
-    _my_current = 2.3456
-    _my_range = 0.0
-    _my_compliance = 0.0
-    _output_on = False
     _available_cameras = ""
     CAMARA = None
     my_camera_ready = False
@@ -473,31 +498,6 @@ class GreatEyes_D(Device):
         GreatEyes.DisconnectCamara()
 
 
-    current = attribute(
-        label="Current",
-        dtype=float,
-        display_level=DispLevel.EXPERT,
-        access=AttrWriteType.READ_WRITE,
-        unit="A",
-        format="8.4f",
-        min_value=0.0,
-        max_value=8.5,
-        min_alarm=0.1,
-        max_alarm=8.4,
-        min_warning=0.5,
-        max_warning=8.0,
-        fget="get_current",
-        fset="set_current",
-        doc="the power supply current",
-    )
-
-    noise = attribute(
-        label="Noise",
-        dtype=((float,),),
-        max_dim_x=1450,
-        max_dim_y=1450,
-        fget="get_noise",
-    )
 
     Image_foto = attribute(
         label="Image Greateyes",
@@ -509,30 +509,10 @@ class GreatEyes_D(Device):
         #fget="get_image",
     )
 
-    # TakeImage = attribute(
-    #     label="Take a Image",
-    #     dtype=str,
-    #     fget="take_image",
-    #     doc="Test to take image",
-    # )
 
 
-    @attribute
-    def voltage(self):
-        return 10.0
 
-    def get_current(self):
-        return self._my_current
 
-    def set_current(self, current):
-        print("Current set to %f" % current)
-        self._my_current = current
-
-    def get_noise(self):
-        a = np.random.random_sample((500, 500))
-        print(type(a))
-        return a
-    
     def get_image_old(self):
         image_buffer_copy = GreatEyes.AcquisitionFullFrame()
         # image_buffer_copy = np.random.random_sample((2052, 2048))
@@ -551,21 +531,6 @@ class GreatEyes_D(Device):
     def get_image(self):
         return self.save_image
 
-    # @command(dtype_in=int, dtype_out=str)
-    # def set_expousure_time_us(self,parameter):
-    #     self.CAMARA.exposure_time_us = parameter  # set exposure to 1.1 ms
-    #     return "CAMARA "+ " was set exposure time "+ str(parameter) +" us\n"
-            
-    # @command(dtype_in=int, dtype_out=str)      
-    # def set_frames_per_trigger_zero_for_unlimited(self,parameter):
-    #     self.CAMARA.frames_per_trigger_zero_for_unlimited = parameter  # start camera in continuous mode
-    #     return "CAMARA "+ " was set frames per trigger zero or unlimited "+ str(parameter) +"\n"
-        
-    # @command(dtype_in=int, dtype_out=str)       
-    # def set_image_poll_timeout_ms(self,parameter):
-    #     self.CAMARA.image_poll_timeout_ms = parameter  # 1 second polling timeout
-    #     return "CAMARA "+ " was set image poll timeout "+ str(parameter) +" ms\n"
-
 
     @command(dtype_out=str)    
     def get_foto_JSON(self):
@@ -573,11 +538,14 @@ class GreatEyes_D(Device):
         send_JSON = {"Image":self.get_noise().tolist()}
             
         return json.dumps(send_JSON)
+    
+    @command(dtype_out=str)    
+    def getTemperature(self):
+
+        send_JSON = GreatEyes.readTemperature()
+            
+        return json.dumps(send_JSON)
    
-    @command(dtype_in=bool, dtype_out=bool)
-    def output_on_off(self, on_off):
-        self._output_on = on_off
-        return self._output_on
         
 if __name__ == "__main__":
     GreatEyes_D.run_server()

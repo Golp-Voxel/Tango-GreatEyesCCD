@@ -17,7 +17,7 @@ from tango import AttrQuality, AttrWriteType, DevState, DispLevel, AttReqType, D
 from tango.server import Device, attribute, command
 from tango.server import class_property, device_property
 
-DLL_Location ="C:\\Users\\Pedro\\Desktop\\Tango_GreatEyesCCD\\Code\\greateyes.dll" 
+DLL_Location ="C:\\Users\\Voxel\\Desktop\\Tango_Device\\Tango_GreatEyesCCD\\Code\\greateyes.dll" 
 
 db = Database()
 try:
@@ -42,7 +42,8 @@ connectionType = connectionType_USB;
 ip = "192.168.1.233";
 
 # exposure time in ms
-exposureTimeMilliseconds = 10;
+# CHANGE THIS FOR ACQUISITION DURATION
+exposureTimeMilliseconds = 1500;
 
 # pixel clock
 readoutSpeed = readoutSpeed_1_MHz;
@@ -54,7 +55,8 @@ setBytesPerPixel = 4;
 coolingHardwareOption = 42223;
 
 # set temperature for temperature control in degree Celsius
-switchOnTemperatureControl = False;
+# CHANGE THIS TO TRUE TO TURN ON TEMP CONTROL AND TARGET SET TEMP
+switchOnTemperatureControl = True; 
 setTemperature             = 15;
 
 # shutter timings in SHUTTER_AUTO mode
@@ -233,10 +235,14 @@ class GreatEyes():
 
         if switchOnTemperatureControl:
             # check setTemperature value
-            if setTemperature > maxTemperature[0]:
+            if float(setTemperature) > float(maxTemperature[0]):
+                print("Rossa1")
                 setTemperatureValid = False;
-        elif setTemperature < minTemperature[0]:
-            setTemperatureValid = False;
+            elif float(setTemperature) < float(minTemperature[0]):
+                setTemperatureValid = False;
+                print("Rossa2")
+            else:
+                setTemperatureValid = True;
 
         # set temperature
         if setTemperatureValid:
@@ -488,7 +494,7 @@ class GreatEyes_D(Device):
         self.info_stream("\r Try to start the GreatEyes Driver \r")
         setGreatEyesDLL(DLL_Location)
         GreatEyes.ConnectCamera()
-        
+        GreatEyes.CoolingSystem()
         
         self.set_status("Thorlabs Camara Driver is ON")
         
@@ -535,7 +541,7 @@ class GreatEyes_D(Device):
     @command(dtype_out=str)    
     def get_foto_JSON(self):
 
-        send_JSON = {"Image":self.get_noise().tolist()}
+        send_JSON = {"Image":self.get_image_old().tolist()}
             
         return json.dumps(send_JSON)
     

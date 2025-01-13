@@ -120,6 +120,9 @@ connectionTypeString = ["USB", "", "", "Ethernet"]
 
 class GreatEyes():
 
+    max_temp = 25 
+    min_temp = -100
+
     def ConnectCamera():
         # /****************************************
         # * 1. connect to camera
@@ -198,7 +201,41 @@ class GreatEyes():
         print(f"sensor feature crop in x (columns): {supportCropXString}\n")
 
 
-    def CoolingSystem():
+    def Cooling_SwitchOff(self):
+        try:
+            print(f"Switch off the cooling")
+            status = TemperatureControl_SwitchOff(lastStatus, cameraAddr)
+            ExitOnError(status, "TemperatureControl_SetTemperature()", lastStatus[0])
+            return True
+        except:
+            return False
+
+
+    def SetTemperature(self, setTemperatureFromUser):
+        # check setTemperature value
+        setTemperatureValid = False
+        if float(setTemperatureFromUser) > float(self.max_temp):
+            setTemperatureValid = False;
+        elif float(setTemperatureFromUser) < float(self.min_temp):
+            setTemperatureValid = False;
+            print("Rossa2")
+        else:
+            setTemperatureValid = True;
+
+        # set temperature
+        if setTemperatureValid:
+            print(f"setting temperature: {setTemperatureFromUser} degree Celsius")
+            status = TemperatureControl_SetTemperature(setTemperatureFromUser, lastStatus, cameraAddr)
+            ExitOnError(status, "TemperatureControl_SetTemperature()", lastStatus[0])
+            return "Temperature was set to the valeu"
+        else:
+            msg_to_send = f"set temperature value ({setTemperatureFromUser} degree Celsius) not valid"
+            print(msg_to_send)
+            print(f"no temperature set")           
+            return msg_to_send
+
+
+    def CoolingSystem(self):
         # /****************************************
         # * 2. setup cooling control
         # * **************************************/	
@@ -217,8 +254,7 @@ class GreatEyes():
         backsideTemperature = [0];
         temperatureLevels = 0;
     
-       
-        setTemperatureValid = False;
+    
 
         minTemperature = [0];
         maxTemperature = [0];
@@ -231,29 +267,12 @@ class GreatEyes():
             print(f"numCoolingLevel: {numCoolingLevel} cooling levels")
             print(f"minTemperature: {minTemperature[0]} degree Celsius")
             print(f"maxTemperature: {maxTemperature[0]} degree Celsius\n")
+            self.max_temp= float(maxTemperature[0])
+            self.min_temp= float(minTemperature[0])
 
 
         if switchOnTemperatureControl:
-            # check setTemperature value
-            if float(setTemperature) > float(maxTemperature[0]):
-                print("Rossa1")
-                setTemperatureValid = False;
-            elif float(setTemperature) < float(minTemperature[0]):
-                setTemperatureValid = False;
-                print("Rossa2")
-            else:
-                setTemperatureValid = True;
-
-        # set temperature
-        if setTemperatureValid:
-            print(f"setting temperature: {setTemperature} degree Celsius")
-            status = TemperatureControl_SetTemperature(setTemperature, lastStatus, cameraAddr)
-            ExitOnError(status, "TemperatureControl_SetTemperature()", lastStatus[0])
-        else:
-            print(f"set temperature value ({setTemperature} degree Celsius) not valid")
-            print(f"no temperature set")
-
-        print(f"\n")
+            self.SetTemperature(setTemperature)
 
 
         # readout temperature values ()
@@ -490,13 +509,16 @@ class GreatEyes_D(Device):
     def init_device(self):
         super().init_device()
         self.info_stream(f"Connection details: {self.host}:{self.port}")
-        self.set_state(DevState.ON)
         self.info_stream("\r Try to start the GreatEyes Driver \r")
         setGreatEyesDLL(DLL_Location)
-        GreatEyes.ConnectCamera()
-        GreatEyes.CoolingSystem()
+        if GreatEyes.ConnectCamera() == -1 :
+            self.set_status("GreatEyes Camara Driver is did not detect any camera")
+            self.set_state(DevState.OFF)
+        else:
+            GreatEyes.CoolingSystem()
         
-        self.set_status("Thorlabs Camara Driver is ON")
+            self.set_status("GreatEyes Camara Driver is ON")
+            self.set_state(DevState.ON)
         
     
     # Tango Device Delete function     
@@ -551,7 +573,32 @@ class GreatEyes_D(Device):
         send_JSON = GreatEyes.readTemperature()
             
         return json.dumps(send_JSON)
-   
+    
+    
+    # TO BE TESTED
+
+    @command(dtype_out=str, dtype_in=float)    
+    def setTemperature(self,temperature):
+
+        send_msg = GreatEyes.SetTemperature(temperature)
+            
+        return send_msg
+    
+
+    @command(dtype_out=bool)    
+    def OffCooling(self):
+
+        send_msg = GreatEyes.Cooling_SwitchOff()
+            
+        return send_msg
+    
+    @command()    
+    def OnCooling(self):
+        
+        GreatEyes.CoolingSystem()
+            
+        return 
+   # TO BE TESTED
         
 if __name__ == "__main__":
     GreatEyes_D.run_server()

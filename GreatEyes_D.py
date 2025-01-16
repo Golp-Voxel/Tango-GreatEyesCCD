@@ -116,12 +116,12 @@ supportCropXString    = "not supported"
 
 connectionTypeString = ["USB", "", "", "Ethernet"]
 
-
+max_temp = 25 
+min_temp = -100
 
 class GreatEyes():
 
-    max_temp = 25 
-    min_temp = -100
+    
 
     def ConnectCamera():
         # /****************************************
@@ -201,7 +201,7 @@ class GreatEyes():
         print(f"sensor feature crop in x (columns): {supportCropXString}\n")
 
 
-    def Cooling_SwitchOff(self):
+    def Cooling_SwitchOff():
         try:
             print(f"Switch off the cooling")
             status = TemperatureControl_SwitchOff(lastStatus, cameraAddr)
@@ -211,37 +211,43 @@ class GreatEyes():
             return False
 
 
-    def SetTemperature(self, setTemperatureFromUser):
+    def SetTemperatureForCooling( setTemperatureFromUser):
         # check setTemperature value
+        global setTemperature
+
+        setTemperature = setTemperatureFromUser;
+
         setTemperatureValid = False
-        if float(setTemperatureFromUser) > float(self.max_temp):
+        if float(setTemperatureFromUser) > float(max_temp):
             setTemperatureValid = False;
-        elif float(setTemperatureFromUser) < float(self.min_temp):
+        elif float(setTemperatureFromUser) < float(min_temp):
             setTemperatureValid = False;
-            print("Rossa2")
         else:
             setTemperatureValid = True;
 
         # set temperature
         if setTemperatureValid:
-            print(f"setting temperature: {setTemperatureFromUser} degree Celsius")
-            status = TemperatureControl_SetTemperature(setTemperatureFromUser, lastStatus, cameraAddr)
+            print(f"setting temperature: {setTemperature} degree Celsius")
+            status = TemperatureControl_SetTemperature(setTemperature, lastStatus, cameraAddr)
             ExitOnError(status, "TemperatureControl_SetTemperature()", lastStatus[0])
-            return "Temperature was set to the valeu"
+            print("Temperature was set to the valeu")
+            return {"result": True, "details": f"Temperature was set to the valeu{setTemperature}"}
         else:
-            msg_to_send = f"set temperature value ({setTemperatureFromUser} degree Celsius) not valid"
+            msg_to_send = f"set temperature value ({setTemperature} degree Celsius) not valid"
             print(msg_to_send)
             print(f"no temperature set")           
-            return msg_to_send
+            return {"result": False, "details": msg_to_send}
 
 
-    def CoolingSystem(self):
+    def CoolingSystem():
         # /****************************************
         # * 2. setup cooling control
         # * **************************************/	
 
         # global vars
         global lastStatus
+        global max_temp
+        global min_temp
         # print(f"Last Status : {lastStatus[0]}")
         
         # variables for temperature control
@@ -258,31 +264,35 @@ class GreatEyes():
 
         minTemperature = [0];
         maxTemperature = [0];
-
-        if switchOnTemperatureControl:
-            # initial setup of temperature control
-            numCoolingLevel = TemperatureControl_Init(coolingHardwareOption, minTemperature, maxTemperature, lastStatus, cameraAddr)
-            # ExitOnError(numCoolingLevel, "TemperatureControl_Init()", lastStatus[0]);
-            print(f"temperature control initialized.")
-            print(f"numCoolingLevel: {numCoolingLevel} cooling levels")
-            print(f"minTemperature: {minTemperature[0]} degree Celsius")
-            print(f"maxTemperature: {maxTemperature[0]} degree Celsius\n")
-            self.max_temp= float(maxTemperature[0])
-            self.min_temp= float(minTemperature[0])
-
-
-        if switchOnTemperatureControl:
-            self.SetTemperature(setTemperature)
+        try: 
+            if switchOnTemperatureControl:
+                # initial setup of temperature control
+                numCoolingLevel = TemperatureControl_Init(coolingHardwareOption, minTemperature, maxTemperature, lastStatus, cameraAddr)
+                # ExitOnError(numCoolingLevel, "TemperatureControl_Init()", lastStatus[0]);
+                print(f"temperature control initialized.")
+                print(f"numCoolingLevel: {numCoolingLevel} cooling levels")
+                print(f"minTemperature: {minTemperature[0]} degree Celsius")
+                print(f"maxTemperature: {maxTemperature[0]} degree Celsius\n")
+                max_temp= float(maxTemperature[0])
+                min_temp= float(minTemperature[0])
 
 
-        # readout temperature values ()
-        status = TemperatureControl_GetTemperature(thermistorSensorTemperature, sensorTemperature, lastStatus, cameraAddr)
-        ExitOnError(status, "TemperatureControl_GetTemperature()", lastStatus[0]);			
-        print(f"sensor temperature: {sensorTemperature[0]} degree Celsius")
-        
-        status = TemperatureControl_GetTemperature(thermistorBacksideTemperature, backsideTemperature, lastStatus, cameraAddr)
-        ExitOnError(status, "TemperatureControl_GetTemperature()", lastStatus[0]);			
-        print(f"backside temperature: {backsideTemperature[0]} degree Celsius\n")
+            if switchOnTemperatureControl:
+                GreatEyes.SetTemperatureForCooling(setTemperature)
+                print("working")
+
+
+            # readout temperature values ()
+            status = TemperatureControl_GetTemperature(thermistorSensorTemperature, sensorTemperature, lastStatus, cameraAddr)
+            ExitOnError(status, "TemperatureControl_GetTemperature()", lastStatus[0]);			
+            print(f"sensor temperature: {sensorTemperature[0]} degree Celsius")
+            
+            status = TemperatureControl_GetTemperature(thermistorBacksideTemperature, backsideTemperature, lastStatus, cameraAddr)
+            ExitOnError(status, "TemperatureControl_GetTemperature()", lastStatus[0]);			
+            print(f"backside temperature: {backsideTemperature[0]} degree Celsius\n")
+            return True
+        except:
+            return False
 
     
     def AutoShutter():  
@@ -577,27 +587,26 @@ class GreatEyes_D(Device):
     
     # TO BE TESTED
 
-    @command(dtype_out=str, dtype_in=float)    
-    def setTemperature(self,temperature):
+    @command(dtype_in=int,dtype_out=str)    
+    def setTemperature(self, temperature):
 
-        send_msg = GreatEyes.SetTemperature(temperature)
-            
-        return send_msg
+        send_msg = GreatEyes.SetTemperatureForCooling(temperature)
+        return json.dumps(send_msg)
     
 
-    @command(dtype_out=bool)    
+    @command(dtype_out=str)    
     def OffCooling(self):
 
         send_msg = GreatEyes.Cooling_SwitchOff()
             
-        return send_msg
+        return json.dumps({"result":send_msg})
     
-    @command()    
+    @command(dtype_out=str)    
     def OnCooling(self):
         
-        GreatEyes.CoolingSystem()
+        send_msg = GreatEyes.CoolingSystem()
             
-        return 
+        return  json.dumps({"result":send_msg})
    # TO BE TESTED
         
 if __name__ == "__main__":

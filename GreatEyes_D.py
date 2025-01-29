@@ -327,16 +327,16 @@ class GreatEyes():
         # * **************************************/
 
         # sensor parameters
-        width = [2048];
-        height = [2052];		
+        width = [2048]
+        height = [2052]		
         # print(f"bytesPerPixel {bytesPerPixel[0]}  - c_uint8 {c_uint8} ")
         # print(f"bytesPerPixel {bytesPerPixel[0]}  - c_uint16 {c_uint16} ")
         # print(f"bytesPerPixel {bytesPerPixel[0]}  - c_uint32 {c_uint32} ")
         
         # set exposure time
-        # status = SetExposure(exposureTimeMilliseconds, lastStatus, cameraAddr)
-        # ExitOnError(status, "SetExposure()", lastStatus[0]);	
-        # print(f"exposure time set: {exposureTimeMilliseconds} ms")
+        status = SetExposure(exposureTimeMilliseconds, lastStatus, cameraAddr)
+        ExitOnError(status, "SetExposure()", lastStatus[0])	
+        print(f"exposure time set: {exposureTimeMilliseconds} ms")
 
         # # set readout speed
         # status = SetReadOutSpeed(readoutSpeed, lastStatus, cameraAddr)
@@ -345,7 +345,7 @@ class GreatEyes():
 
         # set bitDepth of incomming data array
         status = SetBitDepth(setBytesPerPixel, lastStatus, cameraAddr)
-        ExitOnError(status, "SetBitDepth()", lastStatus[0]);
+        ExitOnError(status, "SetBitDepth()", lastStatus[0])
         # print(f"bit depth set to: \({setBytesPerPixel} * 8\) bit")
 
         # # get size of image
@@ -374,7 +374,7 @@ class GreatEyes():
 
         # start acquisition
         status = StartMeasurement(enableBiasCorrection, enableSyncOutput, enableShutterOutput, useExternalTrigger, triggerTimeoutMilliseconds, lastStatus, cameraAddr)
-        ExitOnError(status, "StartMeasurement()", lastStatus[0]);
+        ExitOnError(status, "StartMeasurement()", lastStatus[0])
         # print(f"image acquisition started")
 
         # wait until image acquisition is complete 
@@ -511,6 +511,7 @@ class GreatEyes_D(Device):
     CAMARA = None
     my_camera_ready = False
     save_image = []
+    _exposure_time = exposureTimeMilliseconds
 
     host = device_property(dtype=str, default_value="localhost")
     port = class_property(dtype=int, default_value=10000)
@@ -547,11 +548,35 @@ class GreatEyes_D(Device):
         #fget="get_image",
     )
 
+    ExposureTime = attribute(
+        dtype='DevULong64',
+        access=AttrWriteType.READ_WRITE,
+        label="Exposure time of the camera",
+        unit="ms",
+        display_unit="ms",
+        doc="Exposure time of the camera  in ms",
+    )
 
-
+    def read_ExposureTime(self):
+        # PROTECTED REGION ID(ThorlabsC.ExposureTime_read) ENABLED START #
+        """Return the ExposureTime attribute."""
+        return self._exposure_time
+        # PROTECTED REGION END #    //  ThorlabsC.ExposureTime_read
+    def write_ExposureTime(self, value):
+        # PROTECTED REGION ID(ThorlabsC.ExposureTime_write) ENABLED START #
+        """Set the ExposureTime attribute."""
+        global exposureTimeMilliseconds
+        self._exposure_time = value
+        exposureTimeMilliseconds = int(value)  
+        pass
 
 
     def get_image_old(self):
+        image_buffer_copy = GreatEyes.AcquisitionFullFrame()
+        # image_buffer_copy = np.random.random_sample((2052, 2048))
+        return image_buffer_copy
+    
+    def get_image_pass_expo(self):
         image_buffer_copy = GreatEyes.AcquisitionFullFrame()
         # image_buffer_copy = np.random.random_sample((2052, 2048))
         return image_buffer_copy
@@ -571,9 +596,8 @@ class GreatEyes_D(Device):
 
 
     @command(dtype_out=str)    
-    def get_foto_JSON(self):
-
-        send_JSON = {"Image":self.get_image_old().tolist()}
+    def get_foto_JSON(self,):
+        send_JSON = {"Image":self.get_image_pass_expo().tolist()}
             
         return json.dumps(send_JSON)
     
